@@ -30,6 +30,7 @@ server.use(
     },
   })
 );
+
 server.use(Express.json());
 
 server.use("/blogPosts", blogsRouter);
