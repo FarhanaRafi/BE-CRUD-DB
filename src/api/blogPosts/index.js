@@ -1,6 +1,9 @@
 import express from "express";
 import createHttpError from "http-errors";
 import BlogsModel from "./model.js";
+import multer from "multer";
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 
 const blogsRouter = express.Router();
 
@@ -61,5 +64,36 @@ blogsRouter.delete("/:blogId", async (req, res, next) => {
     next(error);
   }
 });
+
+const cloudinaryUploader = multer({
+  storage: new CloudinaryStorage({
+    cloudinary,
+    params: {
+      folder: "BE-DB/blogs",
+    },
+  }),
+}).single("cover");
+
+blogsRouter.put(
+  "/:blogId/uploadCover",
+  cloudinaryUploader,
+  async (req, res, next) => {
+    try {
+      console.log(req.file, "req file");
+      const blog = await BlogsModel.findById(req.params.blogId);
+      blog.cover = req.file.path;
+      await blog.save();
+      if (blog) {
+        res.send(blog);
+      } else {
+        next(
+          createHttpError(404, `Blog with id ${req.params.blogId} not found`)
+        );
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default blogsRouter;
