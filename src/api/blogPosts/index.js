@@ -5,6 +5,8 @@ import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { checkBlogSchema, triggerBadRequest } from "./validation.js";
+import { getPDFReadableStream } from "../../lib/pdf-tools.js";
+import { pipeline } from "stream";
 
 const blogsRouter = express.Router();
 
@@ -101,5 +103,21 @@ blogsRouter.post(
     }
   }
 );
+
+blogsRouter.get("/:blogId/pdf", async (req, res, next) => {
+  try {
+    res.setHeader("Content-Disposition", "attachment; filename=blog.pdf");
+    const blog = await BlogsModel.findById(req.params.blogId);
+    const source = await getPDFReadableStream(blog);
+    const destination = res;
+    pipeline(source, destination, (err) => {
+      if (err) {
+        console.log(err);
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default blogsRouter;
