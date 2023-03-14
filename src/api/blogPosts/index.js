@@ -4,18 +4,24 @@ import BlogsModel from "./model.js";
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
+import { checkBlogSchema, triggerBadRequest } from "./validation.js";
 
 const blogsRouter = express.Router();
 
-blogsRouter.post("/", async (req, res, next) => {
-  try {
-    const newBlog = new BlogsModel(req.body);
-    const { _id } = await newBlog.save();
-    res.status(201).send({ _id });
-  } catch (error) {
-    next(error);
+blogsRouter.post(
+  "/",
+  checkBlogSchema,
+  triggerBadRequest,
+  async (req, res, next) => {
+    try {
+      const newBlog = new BlogsModel(req.body);
+      const { _id } = await newBlog.save();
+      res.status(201).send({ _id });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 blogsRouter.get("/", async (req, res, next) => {
   try {
     const blogs = await BlogsModel.find();
@@ -74,7 +80,7 @@ const cloudinaryUploader = multer({
   }),
 }).single("cover");
 
-blogsRouter.put(
+blogsRouter.post(
   "/:blogId/uploadCover",
   cloudinaryUploader,
   async (req, res, next) => {
@@ -84,7 +90,7 @@ blogsRouter.put(
       blog.cover = req.file.path;
       await blog.save();
       if (blog) {
-        res.send(blog);
+        res.send({ message: "File uploaded successfully" });
       } else {
         next(
           createHttpError(404, `Blog with id ${req.params.blogId} not found`)
