@@ -141,8 +141,6 @@ blogsRouter.post("/:blogId/comments", async (req, res, next) => {
     const newComment = req.body;
     const commentToInsert = {
       ...newComment,
-      createdAt: new Date(),
-      updatedAt: new Date(),
     };
     const updatedBlog = await BlogsModel.findByIdAndUpdate(
       req.params.blogId,
@@ -211,7 +209,6 @@ blogsRouter.put("/:blogId/comments/:commentId", async (req, res, next) => {
         comment.comments[index] = {
           ...comment.comments[index].toObject(),
           ...req.body,
-          updatedAt: new Date(),
         };
         await comment.save();
         res.send(comment);

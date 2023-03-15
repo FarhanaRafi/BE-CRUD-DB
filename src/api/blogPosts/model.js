@@ -2,6 +2,17 @@ import mongoose from "mongoose";
 
 const { Schema, model } = mongoose;
 
+const commentSchema = new Schema(
+  {
+    comment: { type: String, required: true },
+    rating: { type: Number, min: 1, max: 5 },
+    author: { type: String, required: true },
+  },
+  {
+    timestamps: true,
+  }
+);
+
 const blogsSchema = new Schema(
   {
     category: { type: String, required: true },
@@ -16,14 +27,7 @@ const blogsSchema = new Schema(
       avatar: { type: String },
     },
     content: { type: String, required: true },
-    comments: [
-      {
-        comment: { type: String, required: true },
-        rating: { type: Number, required: true, min: 1, max: 5 },
-        createdAt: Date,
-        updatedAt: Date,
-      },
-    ],
+    comments: [commentSchema],
   },
   {
     timestamps: true,
