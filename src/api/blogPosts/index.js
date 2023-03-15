@@ -7,6 +7,7 @@ import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { checkBlogSchema, triggerBadRequest } from "./validation.js";
 import { getPDFReadableStream } from "../../lib/pdf-tools.js";
 import { pipeline } from "stream";
+import q2m from "query-to-mongo";
 
 const blogsRouter = express.Router();
 
@@ -26,8 +27,23 @@ blogsRouter.post(
 );
 blogsRouter.get("/", async (req, res, next) => {
   try {
-    const blogs = await BlogsModel.find();
-    res.send(blogs);
+    console.log("req.query", req.query);
+    console.log("q2m", q2m(req.query));
+    const mongoQuery = q2m(req.query);
+    const blogs = await BlogsModel.find(
+      mongoQuery.criteria,
+      mongoQuery.options.fields
+    )
+      .limit(mongoQuery.options.limit)
+      .skip(mongoQuery.options.skip)
+      .sort(mongoQuery.options.sort);
+    const total = await BlogsModel.countDocuments(mongoQuery.criteria);
+    res.send({
+      links: mongoQuery.links(process.env.LINK_URL + "/blogPosts", total),
+      total,
+      numberOfPages: Math.ceil(total / mongoQuery.options.limit),
+      blogs,
+    });
   } catch (error) {
     next(error);
   }

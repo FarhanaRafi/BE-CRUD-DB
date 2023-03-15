@@ -19,7 +19,7 @@ const blogsSchema = new Schema(
     comments: [
       {
         comment: { type: String, required: true },
-        rating: { type: Number, required: true },
+        rating: { type: Number, required: true, min: 1, max: 5 },
         createdAt: Date,
         updatedAt: Date,
       },
