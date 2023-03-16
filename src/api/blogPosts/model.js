@@ -6,7 +6,7 @@ const commentSchema = new Schema(
   {
     comment: { type: String, required: true },
     rating: { type: Number, min: 1, max: 5 },
-    author: { type: String, required: true },
+    author: { type: String },
   },
   {
     timestamps: true,
@@ -22,12 +22,10 @@ const blogsSchema = new Schema(
       value: { type: Number, required: true },
       unit: { type: String, required: true },
     },
-    author: {
-      name: { type: String, required: true },
-      avatar: { type: String },
-    },
+    authors: [{ type: Schema.Types.ObjectId, ref: "Author" }],
     content: { type: String, required: true },
     comments: [commentSchema],
+    likes: [{ type: Schema.Types.ObjectId, ref: "Author" }],
   },
   {
     timestamps: true,

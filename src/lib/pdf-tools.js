@@ -22,7 +22,7 @@ export const getPDFReadableStream = async (blogsArray) => {
         text: `\n ${blogsArray.category} - ${blogsArray.content}`,
         style: "body",
       },
-      { text: `\n${blogsArray.author.name}\n\n`, style: "body" },
+      // { text: `\n${blogsArray.author.name}\n\n`, style: "body" },
       {
         image: `data:image/jpeg;base64,${imageBase}`,
         width: 500,

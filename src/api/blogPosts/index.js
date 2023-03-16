@@ -8,6 +8,7 @@ import { checkBlogSchema, triggerBadRequest } from "./validation.js";
 import { getPDFReadableStream } from "../../lib/pdf-tools.js";
 import { pipeline } from "stream";
 import q2m from "query-to-mongo";
+import AuthorsModel from "../authors/model.js";
 
 const blogsRouter = express.Router();
 
@@ -36,7 +37,8 @@ blogsRouter.get("/", async (req, res, next) => {
     )
       .limit(mongoQuery.options.limit)
       .skip(mongoQuery.options.skip)
-      .sort(mongoQuery.options.sort);
+      .sort(mongoQuery.options.sort)
+      .populate({ path: "authors", select: "name" });
     const total = await BlogsModel.countDocuments(mongoQuery.criteria);
     res.send({
       links: mongoQuery.links(process.env.LINK_URL + "/blogPosts", total),
@@ -50,7 +52,10 @@ blogsRouter.get("/", async (req, res, next) => {
 });
 blogsRouter.get("/:blogId", async (req, res, next) => {
   try {
-    const blog = await BlogsModel.findById(req.params.blogId);
+    const blog = await BlogsModel.findById(req.params.blogId).populate({
+      path: "authors",
+      select: "name surname avatar",
+    });
     if (blog) {
       res.send(blog);
     } else {
@@ -238,6 +243,40 @@ blogsRouter.delete("/:blogId/comments/:commentId", async (req, res, next) => {
       res.send(updatedBlog);
     } else {
       next(createHttpError(404, `Blog with id ${req.params.blogId} not found`));
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+blogsRouter.post("/:blogId/likes", async (req, res, next) => {
+  try {
+    const { authorId } = req.body;
+    const blog = await BlogsModel.findById(req.params.blogId);
+    if (!blog)
+      return next(
+        createHttpError(404, `Blog with id ${req.params.blogId} not found`)
+      );
+    const likes = await AuthorsModel.findById(authorId);
+    console.log(likes, "likes");
+    if (!likes)
+      return next(createHttpError(404, `Author with id ${authorId} not found`));
+    console.log(authorId, "author");
+    if (blog.likes.includes(authorId)) {
+      const deleteLikes = await BlogsModel.findOneAndUpdate(
+        { _id: req.params.blogId },
+        { $pull: { likes: authorId } },
+        { new: true, runValidators: true }
+      );
+      res.send(deleteLikes);
+    } else {
+      const updatedBlog = await BlogsModel.findOneAndUpdate(
+        { _id: req.params.blogId },
+        { $push: { likes: authorId } },
+        { new: true, runValidators: true, upsert: true }
+      );
+      console.log(updatedBlog, "+++++++++");
+      res.send(updatedBlog);
     }
   } catch (error) {
     next(error);

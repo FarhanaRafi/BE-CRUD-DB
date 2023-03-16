@@ -26,12 +26,12 @@ const blogsSchema = {
       errorMessage: "ReadTime.unit is a mandatory and needs to be in string",
     },
   },
-  "author.name": {
-    in: ["body"],
-    isString: {
-      errorMessage: "Author.name is a mandatory and needs to be in string",
-    },
-  },
+  //   "author.name": {
+  //     in: ["body"],
+  //     isString: {
+  //       errorMessage: "Author.name is a mandatory and needs to be in string",
+  //     },
+  //   },
   //   "author.avatar": {
   //     in: ["body"],
   //     isString: {
