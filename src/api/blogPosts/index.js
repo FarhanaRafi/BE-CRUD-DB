@@ -268,7 +268,10 @@ blogsRouter.post("/:blogId/likes", async (req, res, next) => {
         { $pull: { likes: authorId } },
         { new: true, runValidators: true }
       );
-      res.send(deleteLikes);
+      res.send({
+        likedArray: deleteLikes.likes,
+        length: deleteLikes.likes.length,
+      });
     } else {
       const updatedBlog = await BlogsModel.findOneAndUpdate(
         { _id: req.params.blogId },
@@ -276,7 +279,10 @@ blogsRouter.post("/:blogId/likes", async (req, res, next) => {
         { new: true, runValidators: true, upsert: true }
       );
       console.log(updatedBlog, "+++++++++");
-      res.send(updatedBlog);
+      res.send({
+        likedArray: updatedBlog.likes,
+        length: updatedBlog.likes.length,
+      });
     }
   } catch (error) {
     next(error);
