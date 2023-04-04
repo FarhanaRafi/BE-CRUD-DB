@@ -4,28 +4,35 @@ import BlogsModel from "./model.js";
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
-import { checkBlogSchema, triggerBadRequest } from "./validation.js";
 import { getPDFReadableStream } from "../../lib/pdf-tools.js";
 import { pipeline } from "stream";
 import q2m from "query-to-mongo";
 import AuthorsModel from "../authors/model.js";
+import { basicAuthMiddleware } from "../../lib/auth/basic.js";
 
 const blogsRouter = express.Router();
 
-blogsRouter.post(
-  "/",
-  checkBlogSchema,
-  triggerBadRequest,
-  async (req, res, next) => {
-    try {
-      const newBlog = new BlogsModel(req.body);
-      const { _id } = await newBlog.save();
-      res.status(201).send({ _id });
-    } catch (error) {
-      next(error);
-    }
+blogsRouter.post("/", basicAuthMiddleware, async (req, res, next) => {
+  try {
+    const newBlog = new BlogsModel(req.body);
+    newBlog.authors = [...newBlog.authors, req.author._id];
+    const { _id } = await newBlog.save();
+    res.status(201).send({ _id });
+  } catch (error) {
+    next(error);
   }
-);
+});
+blogsRouter.get("/me/stories", basicAuthMiddleware, async (req, res, next) => {
+  try {
+    const blogs = await BlogsModel.find({
+      authors: { $in: [req.author._id] },
+    }).populate("authors");
+    res.send(blogs);
+  } catch (error) {
+    next(error);
+  }
+});
+
 blogsRouter.get("/", async (req, res, next) => {
   try {
     console.log("req.query", req.query);
@@ -50,6 +57,7 @@ blogsRouter.get("/", async (req, res, next) => {
     next(error);
   }
 });
+
 blogsRouter.get("/:blogId", async (req, res, next) => {
   try {
     const blog = await BlogsModel.findById(req.params.blogId).populate({
@@ -65,29 +73,47 @@ blogsRouter.get("/:blogId", async (req, res, next) => {
     next(error);
   }
 });
-blogsRouter.put("/:blogId", async (req, res, next) => {
+blogsRouter.put("/:blogId", basicAuthMiddleware, async (req, res, next) => {
   try {
-    const updatedBlog = await BlogsModel.findByIdAndUpdate(
-      req.params.blogId,
-      req.body,
-      { new: true, runValidators: true }
-    );
-    if (updatedBlog) {
-      res.send(updatedBlog);
-    } else {
-      next(createHttpError(404, `Blog with id ${req.params.blogId} not found`));
+    // const updatedBlog = await BlogsModel.findByIdAndUpdate(
+    //   req.params.blogId,
+    //   req.body,
+    //   { new: true, runValidators: true }
+    // );
+    const blog = await BlogsModel.findById(req.params.blogId);
+    if (blog.authors.includes(req.author._id) || req.author.role === "Admin") {
+      const updatedBlog = await BlogsModel.findByIdAndUpdate(
+        req.params.blogId,
+        req.body,
+        { new: true, runValidators: true }
+      );
+      if (updatedBlog) {
+        res.send(updatedBlog);
+      } else {
+        next(createHttpError(403, `You are not authorized`));
+      }
     }
   } catch (error) {
     next(error);
   }
 });
-blogsRouter.delete("/:blogId", async (req, res, next) => {
+blogsRouter.delete("/:blogId", basicAuthMiddleware, async (req, res, next) => {
   try {
-    const deletedBlog = await BlogsModel.findByIdAndDelete(req.params.blogId);
-    if (deletedBlog) {
-      res.status(204).send();
-    } else {
-      next(createHttpError(404, `Blog with id ${req.params.blogId} not found`));
+    // const deletedBlog = await BlogsModel.findByIdAndDelete(req.params.blogId);
+    const blog = await BlogsModel.findById(req.params.blogId);
+    if (blog.authors.includes(req.author._id) || req.author.role === "Admin") {
+      const deletedBlog = await BlogsModel.findByIdAndUpdate(
+        req.params.blogId,
+        req.body,
+        { new: true, runValidators: true }
+      );
+      if (deletedBlog) {
+        res.status(204).send();
+      } else {
+        next(
+          createHttpError(404, `Blog with id ${req.params.blogId} not found`)
+        );
+      }
     }
   } catch (error) {
     next(error);

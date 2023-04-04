@@ -1,5 +1,7 @@
 import express from "express";
 import createHttpError from "http-errors";
+import { adminOnlyMiddleware } from "../../lib/auth/admin.js";
+import { basicAuthMiddleware } from "../../lib/auth/basic.js";
 import AuthorsModel from "./model.js";
 
 const authorsRouter = express.Router();
@@ -13,14 +15,19 @@ authorsRouter.post("/", async (req, res, next) => {
     next(error);
   }
 });
-authorsRouter.get("/", async (req, res, next) => {
-  try {
-    const authors = await AuthorsModel.find();
-    res.send(authors);
-  } catch (error) {
-    next(error);
+authorsRouter.get(
+  "/",
+  basicAuthMiddleware,
+  adminOnlyMiddleware,
+  async (req, res, next) => {
+    try {
+      const authors = await AuthorsModel.find();
+      res.send(authors);
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 authorsRouter.get("/:authorId", async (req, res, next) => {
   try {
     const author = await AuthorsModel.findById(req.params.authorId);

@@ -7,6 +7,7 @@ import {
   unauthorizedHandler,
   notfoundHandler,
   genericErrorHandler,
+  forbiddenErrorHandler,
 } from "./errorHandlers.js";
 import blogsRouter from "./api/blogPosts/index.js";
 import authorsRouter from "./api/authors/index.js";
@@ -39,6 +40,7 @@ server.use("/authors", authorsRouter);
 
 server.use(badRequestHandler);
 server.use(unauthorizedHandler);
+server.use(forbiddenErrorHandler);
 server.use(notfoundHandler);
 server.use(genericErrorHandler);
 
