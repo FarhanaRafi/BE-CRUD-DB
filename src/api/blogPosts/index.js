@@ -9,10 +9,11 @@ import { pipeline } from "stream";
 import q2m from "query-to-mongo";
 import AuthorsModel from "../authors/model.js";
 import { basicAuthMiddleware } from "../../lib/auth/basic.js";
+import { JWTAuthMiddleware } from "../../lib/auth/jwt.js";
 
 const blogsRouter = express.Router();
 
-blogsRouter.post("/", basicAuthMiddleware, async (req, res, next) => {
+blogsRouter.post("/", JWTAuthMiddleware, async (req, res, next) => {
   try {
     const newBlog = new BlogsModel(req.body);
     newBlog.authors = [...newBlog.authors, req.author._id];
@@ -22,7 +23,7 @@ blogsRouter.post("/", basicAuthMiddleware, async (req, res, next) => {
     next(error);
   }
 });
-blogsRouter.get("/me/stories", basicAuthMiddleware, async (req, res, next) => {
+blogsRouter.get("/me/stories", JWTAuthMiddleware, async (req, res, next) => {
   try {
     const blogs = await BlogsModel.find({
       authors: { $in: [req.author._id] },
@@ -33,7 +34,7 @@ blogsRouter.get("/me/stories", basicAuthMiddleware, async (req, res, next) => {
   }
 });
 
-blogsRouter.get("/", async (req, res, next) => {
+blogsRouter.get("/", JWTAuthMiddleware, async (req, res, next) => {
   try {
     console.log("req.query", req.query);
     console.log("q2m", q2m(req.query));
@@ -58,7 +59,7 @@ blogsRouter.get("/", async (req, res, next) => {
   }
 });
 
-blogsRouter.get("/:blogId", async (req, res, next) => {
+blogsRouter.get("/:blogId", JWTAuthMiddleware, async (req, res, next) => {
   try {
     const blog = await BlogsModel.findById(req.params.blogId).populate({
       path: "authors",
@@ -73,7 +74,7 @@ blogsRouter.get("/:blogId", async (req, res, next) => {
     next(error);
   }
 });
-blogsRouter.put("/:blogId", basicAuthMiddleware, async (req, res, next) => {
+blogsRouter.put("/:blogId", JWTAuthMiddleware, async (req, res, next) => {
   try {
     // const updatedBlog = await BlogsModel.findByIdAndUpdate(
     //   req.params.blogId,
@@ -97,7 +98,7 @@ blogsRouter.put("/:blogId", basicAuthMiddleware, async (req, res, next) => {
     next(error);
   }
 });
-blogsRouter.delete("/:blogId", basicAuthMiddleware, async (req, res, next) => {
+blogsRouter.delete("/:blogId", JWTAuthMiddleware, async (req, res, next) => {
   try {
     // const deletedBlog = await BlogsModel.findByIdAndDelete(req.params.blogId);
     const blog = await BlogsModel.findById(req.params.blogId);
