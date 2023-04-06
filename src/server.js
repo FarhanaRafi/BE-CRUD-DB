@@ -11,10 +11,14 @@ import {
 } from "./errorHandlers.js";
 import blogsRouter from "./api/blogPosts/index.js";
 import authorsRouter from "./api/authors/index.js";
+import passport from "passport";
+import googleStrategy from "./lib/auth/googleOauth.js";
 
 const server = Express();
 const port = process.env.PORT;
 const whitelist = [process.env.FE_DEV_URL, process.env.FE_PROD_URL];
+
+passport.use("google", googleStrategy);
 
 server.use(
   cors({
@@ -34,6 +38,7 @@ server.use(
 );
 
 server.use(Express.json());
+server.use(passport.initialize());
 
 server.use("/blogPosts", blogsRouter);
 server.use("/authors", authorsRouter);

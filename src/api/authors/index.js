@@ -1,5 +1,6 @@
 import express from "express";
 import createHttpError from "http-errors";
+import passport from "passport";
 import { adminOnlyMiddleware } from "../../lib/auth/admin.js";
 import { basicAuthMiddleware } from "../../lib/auth/basic.js";
 import { JWTAuthMiddleware } from "../../lib/auth/jwt.js";
@@ -8,6 +9,25 @@ import AuthorsModel from "./model.js";
 // import { createAccessToken } from "../../lib/auth/tools.js"
 
 const authorsRouter = express.Router();
+
+authorsRouter.get(
+  "/googleLogin",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+authorsRouter.get(
+  "/googleRedirect",
+  passport.authenticate("google", { session: false }),
+  (req, res, next) => {
+    try {
+      res.redirect(
+        `${process.env.FE_URL}/Bearer?accessToken=${req.user.accessToken}`
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 authorsRouter.post("/register", async (req, res, next) => {
   try {
